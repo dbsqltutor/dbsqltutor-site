@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gladius Verborum - Latin Flashcards</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            background: #2c0e0e; /* Pompeian Red */
+            background-image: linear-gradient(rgba(44, 14, 14, 0.85), rgba(44, 14, 14, 0.85)), 
+                              url('https://www.transparenttextures.com/patterns/marble-pavement.png');
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #f3e5ab; /* Parchment Gold */
+        }
+        
+        h1 {
+            font-variant: small-caps;
+            letter-spacing: 6px;
+            margin-bottom: 0px;
+            color: #d4af37;
+            text-shadow: 3px 3px 6px #000;
+            font-size: 3rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #d4af37;
+            font-style: italic;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        
+        #mode-indicator {
+            height: 25px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #ffd700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Chapter Selection */
+        .deck-selector {
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 8px 16px;
+            font-family: 'Times New Roman', serif;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #f3e5ab;
+            color: #800000;
+            border: 2px solid #d4af37;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        .scene {
+            width: 400px;
+            height: 280px;
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card__face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            box-sizing: border-box;
+            border-radius: 2px;
+            text-align: center;
+            background: #fffdf5; /* Parchment */
+            border: 10px double #d4af37; /* Roman Border */
+        }
+
+        .card__face--front {
+            font-size: 28px;
+            font-weight: bold;
+            color: #800000; /* Imperial Red */
+        }
+
+        .card__face--back {
+            transform: rotateY(180deg);
+            font-size: 20px;
+            background-color: #f5f5dc;
+            color: #1a1a1a;
+            overflow-y: auto;
+        }
+
+        .notes {
+            font-size: 15px;
+            color: #5d4037;
+            margin-top: 15px;
+            border-top: 1px solid #d4af37;
+            padding-top: 10px;
+            font-style: italic;
+        }
+
+        .star-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 35px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: color 0.3s, transform 0.2s;
+            z-index: 10;
+        }
+
+        .star-indicator.marked {
+            color: #d4af37;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
+        /* Navigation controls */
+        .controls {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-family: 'Times New Roman', serif;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            background-color: #800000; /* Legion Red */
+            color: #f3e5ab;
+            border: 2px solid #d4af37;
+            transition: all 0.3s;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        button:hover {
+            background-color: #a00000;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #000;
+        }
+
+        button:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0px #000;
+        }
+
+        #shuffle-btn { background-color: #4a5d23; border-color: #d4af37; } /* Laurel Green */
+        #review-btn { background-color: #4b0082; border-color: #d4af37; } /* Imperial Purple */
+
+        #counter {
+            margin-top: 25px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #d4af37;
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⚔️ Gladius Verborum ⚔️</h1>
+    <div class="subtitle">Sharpen your mind, conquer the tongue.</div>
+
+    <div class="deck-selector">
+        <select id="chapter-select" onchange="changeChapter()">
+            <option value="1">Chapter 1</option>
+            <option value="2">Chapter 2</option>
+            <option value="3">Chapter 3</option>
+            <option value="4">Chapter 4</option>
+            <option value="5">Chapter 5</option>
+            <option value="6">Chapter 6</option>
+            <option value="7">Chapter 7</option>
+            <option value="all">All Chapters</option>
+        </select>
+    </div>
+    
+    <div id="mode-indicator"></div>
+
+    <div class="scene">
+        <div class="card" id="flashcard" onclick="flipCard()">
+            <div class="card__face card__face--front">
+                <div class="star-indicator" id="front-star" onclick="toggleMark(event)">★</div>
+                <div id="front-text"></div>
+            </div>
+            <div class="card__face card__face--back">
+                <div class="star-indicator" id="back-star" onclick="toggleMark(event)">★</div>
+                <div id="back-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="prevCard()">⇦ Previous</button>
+        <button onclick="flipCard()">Examine</button>
+        <button onclick="nextCard()">Next ⇨</button>
+    </div>
+
+    <div class="controls">
+        <button id="mark-btn" onclick="toggleMark(event)">Mark for Review</button>
+        <button id="shuffle-btn" onclick="shuffleCards()">Shuffle Deck</button>
+        <button id="review-btn" onclick="toggleReviewMode()">Review Marked Only</button>
+    </div>
+    
+    <div id="counter"></div>
+
+    <script>
+        const chapter1 = [
+            { front: "mē", back: "me, myself", notes: "Pronoun" },
+            { front: "quid", back: "what", notes: "Pronoun" },
+            { front: "nihil", back: "nothing", notes: "Noun" },
+            { front: "nōn", back: "not", notes: "Adverb" },
+            { front: "saepe", back: "often", notes: "Adverb" },
+            { front: "sī", back: "if", notes: "Conjunction" },
+            { front: "amō, amāre, amāvī, amātum", back: "v. - to love, like", notes: "Idiom: amābō tē = please" },
+            { front: "cōgitō, cōgitāre, cōgitāvī, cōgitātum", back: "v. - to think, ponder, consider, plan", notes: "(Derivatives: cogitate, cogitation)" },
+            { front: "dēbeō, dēbēre, dēbuī, dēbitum", back: "v. - to owe; ought, must, should", notes: "(Derivatives: debt, debit, due, duty)" },
+            { front: "dō, dare, dedī, datum", back: "v. - to give, offer", notes: "(Stem vowel is long only in 2nd pers. sg. indic. 'dās' and sg. imperat. 'dā')" },
+            { front: "errō, errāre, errāvī, errātum", back: "v. - to wander; err, go astray, make a mistake", notes: "(Derivatives: erratic, error)" },
+            { front: "laudō, laudāre, laudāvī, laudātum", back: "v. - to praise", notes: "(Derivatives: laud, laudable, laudatory)" },
+            { front: "moneō, monēre, monuī, monitum", back: "v. - to remind, advise, warn", notes: "(Derivatives: admonish, monitor, premonition)" },
+            { front: "salveō, salvēre", back: "v. - to be well, be in good health", notes: "" },
+            { front: "salvē, salvēte", back: "hello, greetings!", notes: "Idiom (Derivatives: salvation, salver, salvage)" },
+            { front: "servō, servāre, servāvī, servātum", back: "v. - to preserve, save, keep, guard", notes: "(Derivatives: observe, preserve)" },
+            { front: "cōnservō, cōnservāre, cōnservāvī, cōnservātum", back: "v. - to preserve, conserve, maintain", notes: "(A stronger form of servō)" },
+            { front: "terreō, terrēre, terruī, territum", back: "v. - to frighten, terrify", notes: "(Derivatives: terrible, terrify, deter)" },
+            { front: "valeō, valēre, valuī, valitūrum", back: "v. - to be strong, have power; be well", notes: "" },
+            { front: "videō, vidēre, vīdī, vīsum", back: "v. - to see; observe, understand", notes: "(Derivatives: video, evident, view)" },
+            { front: "vocō, vocāre, vocāvī, vocātum", back: "v. - to call, summon", notes: "(Derivatives: vocation, vocabulary, evoke)" },
+            { front: "valē, valēte", back: "good-bye, farewell!", notes: "Idiom (Derivatives: valedictorian, valid, invalidate, prevail, prevalent)" }
+        ];
+
+        const chapter2 = [
+            { front: "fāma, fāmae", back: "f. - rumor, report; fame, reputation", notes: "(famous, defame, infamy)" },
+            { front: "fōrma, fōrmae", back: "f. - form, shape; beauty", notes: "(formal, format, formula, formless, deform, inform, etc.; but not formic, formidable)" },
+            { front: "fortūna, fortūnae", back: "f. - fortune, luck", notes: "(fortunate, misfortune, unfortunate)" },
+            { front: "īra, īrae", back: "f. - ire, anger", notes: "(irate, irascible; but not irritate)" },
+            { front: "naúta, naútae", back: "m. - sailor", notes: "(nautical, nautilus, argonaut)" },
+            { front: "pátria, pátriae", back: "f. - fatherland, native land, (one’s) country", notes: "(patriotic, expatriate, repatriate)" },
+            { front: "pecūnia, pecūniae", back: "f. - money", notes: "(pecuniary, impecunious; cf. peculation)" },
+            { front: "philosóphia, philosóphiae", back: "f. - philosophy", notes: "(Greek philosophia, love of wisdom)" },
+            { front: "poéna, poénae", back: "f. - penalty, punishment", notes: "poénās dáre, idiom, to pay the penalty (penal, penalize, penalty, pain, subpoena)" },
+            { front: "poēta, poētae", back: "m. - poet", notes: "(poetry, poetic)" },
+            { front: "pórta, pórtae", back: "f. - gate, entrance", notes: "(portal, portico, porch, porthole)" },
+            { front: "puélla, puéllae", back: "f. - girl", notes: "" },
+            { front: "rósa, rósae", back: "f. - rose", notes: "(rosary, roseate, rosette)" },
+            { front: "senténtia, senténtiae", back: "f. - feeling, thought, opinion, vote, sentence", notes: "(sententious, sentencing)" },
+            { front: "vīta, vītae", back: "f. - life; mode of life", notes: "(vital, vitals, vitality, vitamin, vitalize, devitalize, revitalize)" },
+            { front: "antīquus, antīqua, antīquum", back: "adj. - ancient, old-time", notes: "(antique, antiquities, antiquated, antiquarian)" },
+            { front: "mágnus, mágna, mágnum", back: "adj. - large, great; important", notes: "(magnify, magnificent, magnate, magnitude, magnanimous)" },
+            { front: "méus, méa, méum", back: "adj. - my", notes: "" },
+            { front: "múltus, múlta, múltum", back: "adj. - much, many", notes: "(multitude, multiply, multiple; multi-, a prefix as in multimillionaire)" },
+            { front: "túus, túa, túum", back: "adj. - your", notes: "used when speaking to only one person" },
+            { front: "et", back: "conj. - and; even", notes: "et… et, both… and" },
+            { front: "sed", back: "conj. - but", notes: "" },
+            { front: "Ō", back: "interj. - O!, Oh!", notes: "commonly preceding a vocative" },
+            { front: "síne", back: "prep. + abl. - without", notes: "(sinecure, sans)" },
+            { front: "est", back: "v. - is", notes: "" }
+        ];
+
+        const chapter3 = [
+            { front: "áger, ágrī", back: "m. - field, farm", notes: "(agrarian, agriculture, agronomy)" },
+            { front: "agrícola, agrícolae", back: "m. - farmer", notes: "(cf. ager)" },
+            { front: "amīcus, amīcī<br>amīca, amīcae", back: "m./f. - friend", notes: "(amicable, amiable, amity; cf. amō)" },
+            { front: "fēmina, fēminae", back: "f. - woman", notes: "(female, feminine, femininity)" },
+            { front: "fīlia, fīliae", back: "f. - daughter", notes: "dat. and abl. pl. fīliābus<br>(filiation, affiliation, affiliate, filial)" },
+            { front: "fīlius, fīliī", back: "m. - son", notes: "(for derivatives, see fīlia)" },
+            { front: "númerus, númerī", back: "m. - number", notes: "(numeral, innumerable, enumerate)" },
+            { front: "pópulus, pópulī", back: "m. - the people, a people, a nation", notes: "(populace, population, popularity, popularize, populous)" },
+            { front: "púer, púerī", back: "m. - boy; pl. boys, children", notes: "(puerile, puerility, puerperous)" },
+            { front: "sapiéntia, sapiéntiae", back: "f. - wisdom", notes: "(sapience, sapient, sage, savant)" },
+            { front: "vir, vírī", back: "m. - man, hero", notes: "(virtue, virile, triumvirate; not virulent)" },
+            { front: "avārus, avāra, avārum", back: "adj. - greedy, avaricious", notes: "(avarice, avariciousness, avid)" },
+            { front: "paúcī, paúcae, paúca", back: "adj. (usually pl.) - few, a few", notes: "(paucity, pauciloquent, poco)" },
+            { front: "Rōmānus, Rōmāna, Rōmānum", back: "adj. - Roman", notes: "(Romance, romance, romantic, romanticism, Romanesque, Romania)" },
+            { front: "dē", back: "prep. + abl. - down from, from; concerning, about", notes: "as a prefix dē- with such meanings as down, away, aside, out, off (demote, decline, descend)" },
+            { front: "in", back: "prep. + abl. - in, on", notes: "also as a prefix (induce, inscribe, invoke)" },
+            { front: "hódiē", back: "adv. - today", notes: "(hodiernal)" },
+            { front: "sémper", back: "adv. - always", notes: "(sempiternal)" },
+            { front: "hábeō, habēre, hábuī, hábitum", back: "v. - to have, hold, possess; consider, regard", notes: "(in-habit and in-hibit, “hold in”; ex-hibit, “hold forth”; habit, habitat)" },
+            { front: "sátiō, satiāre, satiāvī, satiātum", back: "v. - to satisfy, sate", notes: "(satiate, insatiable, satiety, satisfaction)" }
+        ];
+
+        const chapter4 = [
+            { front: "bāsium, bāsiī", back: "n. - kiss", notes: "(basiate)" },
+            { front: "bellum, bellī", back: "n. - war", notes: "(bellicose, belligerent, rebel, rebellion, revel)" },
+            { front: "cōnsilium, cōnsiliī", back: "n. - plan, purpose, counsel, advice, judgment, wisdom", notes: "(counsel, counselor, conciliate, reconcile)" },
+            { front: "cūra, cūrae", back: "f. - care, attention, caution, anxiety", notes: "(cure, curator, curious, curiosity, curio, curettage, sinecure)" },
+            { front: "dōnum, dōnī", back: "n. - gift, present", notes: "(donate, donation, condone; cf. dō)" },
+            { front: "exitium, exitiī", back: "n. - destruction, ruin", notes: "(exit)" },
+            { front: "magister, magistrī<br>magistra, magistrae", back: "m./f. - schoolmaster/mistress, teacher, master/mistress", notes: "(magistrate, magistracy, magisterial, maestro, mastery, mister, miss; cf. magnus)" },
+            { front: "mora, morae", back: "f. - delay", notes: "(moratorium, demur)" },
+            { front: "nihil", back: "n. (indecl.) - nothing", notes: "(nihilist, annihilate)" },
+            { front: "oculus, oculī", back: "m. - eye", notes: "(ocular, oculist, binoculars, monocle)" },
+            { front: "officium, officiī", back: "n. - duty, service", notes: "(office, officer, official, officious)" },
+            { front: "ōtium, ōtiī", back: "n. - leisure, peace", notes: "(otiose, negotiate)" },
+            { front: "perīculum, perīculī", back: "n. - danger, risk", notes: "(peril, perilous, imperil, parlous)" },
+            { front: "remedium, remediī", back: "n. - cure, remedy", notes: "(remedial, irremediable, remediation)" },
+            { front: "bellus, bella, bellum", back: "adj. - pretty, handsome, charming", notes: "(belle, beau, beauty, embellish, belladonna, belles-lettres). Do not confuse with bellum, war." },
+            { front: "bonus, bona, bonum", back: "adj. - good, kind", notes: "(bonus, bonanza, bonny, bounty, bona fide)" },
+            { front: "hūmānus, hūmāna, hūmānum", back: "adj. - pertaining to man, human; humane, kind; refined, cultivated", notes: "(humanity, humanitarian, humanism, the humanities, humanist, inhuman, superhuman)" },
+            { front: "malus, mala, malum", back: "adj. - bad, wicked, evil", notes: "(malice, malicious, malign, malignant, malaria, malady, malefactor, malfeasance, malevolent; mal- prefix)" },
+            { front: "parvus, parva, parvum", back: "adj. - small, little", notes: "(parvovirus, parvule, parvicellular)" },
+            { front: "stultus, stulta, stultum", back: "adj. - foolish<br>m. noun - a fool", notes: "(stultify, stultification)" },
+            { front: "vērus, vēra, vērum", back: "adj. - true, real, proper", notes: "(verify, verisimilitude, very, veracity)" },
+            { front: "iuvō (or adiuvō), iuvāre, iūvī, iūtum", back: "v. - to help, aid, assist; please", notes: "(adjutant, coadjutant, aid, aide-de-camp)" },
+            { front: "sum, esse, fuī, futūrum", back: "v. - to be, exist", notes: "(essence, essential, future, futurity)" }
+        ];
+
+        const chapter5 = [
+            { front: "adulēscentia, adulēscentiae", back: "f. - youth, young manhood; youthfulness", notes: "(adolescence, adolescent)" },
+            { front: "animus, animī", back: "m. - soul, spirit, mind<br>pl. - high spirits, pride, courage", notes: "(animus, animosity, magnanimous, unanimous, pusillanimous)" },
+            { front: "caelum, caelī", back: "n. - sky, heaven", notes: "(ceiling, celestial, Celeste, cerulean)" },
+            { front: "culpa, culpae", back: "f. - fault, blame", notes: "(cf. culpō; culpable, culprit, exculpate, inculpate)" },
+            { front: "glōria, glōriae", back: "f. - glory, fame", notes: "(glorify, glorification, glorious, inglorious)" },
+            { front: "verbum, verbī", back: "n. - word", notes: "(verb, adverb, verbal, verbiage, verbose, proverb)" },
+            { front: "tē", back: "pron. (abl./acc. sg.) - you; yourself", notes: "cf. mē" },
+            { front: "līber, lībera, līberum", back: "adj. - free", notes: "(liberal, liberality, libertine)" },
+            { front: "noster, nostra, nostrum", back: "adj. - our, ours", notes: "(nostrum, paternoster)" },
+            { front: "pulcher, pulchra, pulchrum", back: "adj. - beautiful, handsome; fine", notes: "(pulchritude, pulchritudinous)" },
+            { front: "sānus, sāna, sānum", back: "adj. - sound, healthy, sane", notes: "(sanity, sanitary, sanitation, sanitarium, insane)" },
+            { front: "igitur", back: "conj. (postpositive) - therefore, consequently", notes: "" },
+            { front: "-ne", back: "interrog. suffix - indicates a question whose answer is uncertain", notes: "Attached to the first word of a sentence, typically the verb." },
+            { front: "propter", back: "prep. + acc. - on account of, because of", notes: "(post hoc, ergo propter hoc, “after this, therefore on account of this”)" },
+            { front: "crās", back: "adv. - tomorrow", notes: "(procrastinate, procrastination)" },
+            { front: "heri", back: "adv. - yesterday", notes: "" },
+            { front: "quandō", back: "interrog./rel. adv. & conj. - when", notes: "sī quandō = if ever" },
+            { front: "satis", back: "indecl. noun/adj./adv. - enough, sufficient(-ly)", notes: "(cf. satiō; satisfy, satisfactory, satiate, insatiable, sate; assets)" },
+            { front: "tum", back: "adv. - then, at that time; thereupon, in the next place", notes: "" },
+            { front: "cēnō, cēnāre, cēnāvī, cēnātum", back: "v. - to dine", notes: "(cenacle)" },
+            { front: "culpō, culpāre, culpāvī, culpātum", back: "v. - to blame, censure", notes: "(cf. culpa)" },
+            { front: "maneō, manēre, mānsī, mānsum<br>remaneō...", back: "v. - to remain, stay, stay behind, abide, continue", notes: "(mansion, manor, permanent, remnant, immanent)" },
+            { front: "superō, superāre, superāvī, superātum", back: "v. - to be above, have the upper hand, surpass; overcome, conquer", notes: "(cf. super; superable, insuperable)" }
+        ];
+
+        const chapter6 = [
+            { front: "deus, deī<br>dea, deae", back: "m./f. - god, goddess", notes: "(adieu, deify, deity)<br>pl. dī, dīs; deābus" },
+            { front: "discipulus, discipulī<br>discipula, discipulae", back: "m./f. - learner, pupil, student", notes: "(disciple, discipline, disciplinary)" },
+            { front: "īnsidiae, īnsidiārum", back: "f. pl. - ambush, plot, treachery", notes: "(insidious)" },
+            { front: "liber, librī", back: "m. - book", notes: "(library, librarian, libretto)<br>Not to be confused with līber (free)" },
+            { front: "tyrannus, tyrannī", back: "m. - absolute ruler, tyrant", notes: "(tyrannical, tyrannous, tyrannicide)" },
+            { front: "vitium, vitiī", back: "n. - fault, crime, vice", notes: "(vitiate, vicious, vituperate)" },
+            { front: "Graecus, Graeca, Graecum", back: "adj. - Greek<br>m. noun - a Greek", notes: "" },
+            { front: "perpetuus, perpetua, perpetuum", back: "adj. - perpetual, lasting, uninterrupted, continuous", notes: "(perpetuate, perpetuity)" },
+            { front: "plēnus, plēna, plēnum", back: "adj. - full, abundant, generous", notes: "(plenary, plenteous, plentiful, plenitude, plenty, replenish, plenipotentiary)" },
+            { front: "salvus, salva, salvum", back: "adj. - safe, sound", notes: "(cf. salveō)" },
+            { front: "secundus, secunda, secundum", back: "adj. - second; favorable", notes: "(secondary)" },
+            { front: "vester, vestra, vestrum", back: "adj. - your (pl.), yours", notes: "Used in addressing more than one person (vs. tuus)" },
+            { front: "-que", back: "enclitic conj. - and", notes: "Appended to the second of two words to be joined: fāma glōriaque, fame and glory" },
+            { front: "ubi", back: "rel./interrog. adv. & conj. - where, when; where?", notes: "(ubiquitous, ubiquity)" },
+            { front: "ibi", back: "adv. - there", notes: "(ib. or ibid.)" },
+            { front: "nunc", back: "adv. - now, at present", notes: "(quidnunc)" },
+            { front: "quārē", back: "adv. - therefore, wherefore, why", notes: "Lit. because of which thing (quā rē)" },
+            { front: "possum, posse, potuī", back: "v. - to be able, can, could, have power", notes: "(posse, possible, potent, potentate, potential, omnipotent)" },
+            { front: "tolerō, tolerāre, tolerāvī, tolerātum", back: "v. - to bear, endure", notes: "(tolerate, toleration, tolerable, intolerable, intolerance)" }
+        ];
+
+        const chapter7 = [
+            { front: "amor, amōris", back: "m. - love", notes: "(amorous, enamored; cf. amō, amīcus)" },
+            { front: "carmen, carminis", back: "n. - song, poem", notes: "(charm)" },
+            { front: "cīvitās, cīvitātis", back: "f. - state, citizenship", notes: "(city)" },
+            { front: "corpus, corporis", back: "n. - body", notes: "(corps, corpse, corpuscle, corpulent, corporal, corporeal, corporate, corporation, incorporate, corsage, corset)" },
+            { front: "homō, hominis", back: "m. - human being, man", notes: "(homicide, homage; homo sapiens; cf. hūmānus and vir)" },
+            { front: "labor, labōris", back: "m. - labor, work, toil; a work, production", notes: "(laboratory, belabor, laborious, collaborate, elaborate)" },
+            { front: "littera, litterae", back: "f. - a letter of the alphabet<br>pl. - a letter (epistle), literature", notes: "(literal, letters, belles-lettres, illiterate, alliteration)" },
+            { front: "mōs, mōris", back: "m. - habit, custom, manner<br>pl. mōrēs - habits, morals, character", notes: "(mores, moral, immoral, immorality, morale, morose)" },
+            { front: "nōmen, nōminis", back: "n. - name", notes: "(nomenclature, nominate, nominative, nominal, noun, pronoun, renown, denomination, ignominy, misnomer)" },
+            { front: "pāx, pācis", back: "f. - peace", notes: "(pacify, pacific, pacifist, appease, pay)" },
+            { front: "rēgīna, rēgīnae", back: "f. - queen", notes: "(Regina, regina, reginal)" },
+            { front: "rēx, rēgis", back: "m. - king", notes: "(regal, regalia, regicide, royal; cf. rajah)" },
+            { front: "tempus, temporis", back: "n. - time; occasion, opportunity", notes: "(tempo, temporary, contemporary, temporal, temporize, extempore, tense)" },
+            { front: "terra, terrae", back: "f. - earth, ground, land, country", notes: "(terrestrial, terrace, terrier, territory, inter, parterre, subterranean, terra cotta)" },
+            { front: "uxor, uxōris", back: "f. - wife", notes: "(uxorial, uxorious, uxoricide)" },
+            { front: "virgō, virginis", back: "f. - maiden, virgin", notes: "(virgin, virginal, virginity, Virginia)" },
+            { front: "virtūs, virtūtis", back: "f. - manliness, courage; excellence, character, worth, virtue", notes: "(virtuoso, virtuosity, virtual; cf. vir)" },
+            { front: "novus, nova, novum", back: "adj. - new; strange", notes: "(novel, novelty, novice, innovate)" },
+            { front: "post", back: "prep. + acc. - after, behind", notes: "(posterity, posterior, posthumous, post mortem, preposterous; post- prefix)" },
+            { front: "sub", back: "prep. + abl. (rest) / acc. (motion) - under, up under, close to; down to/into", notes: "(subterranean, suburb, succeed, suffix, suggest, support, sustain)" },
+            { front: "audeō, audēre, ausus sum", back: "v. (semi-deponent) - to dare", notes: "(audacious, audacity)" },
+            { front: "necō, necāre, necāvī, necātum", back: "v. - to murder, kill", notes: "(internecine; cf. nocēre, to harm)" }
+        ];
+
+        let baseList = [...chapter1]; 
+        let currentList = baseList;
+        let isReviewMode = false;
+        let isDeckComplete = false;
+        let currentIndex = 0;
+        
+        const cardElement = document.getElementById('flashcard');
+        const frontText = document.getElementById('front-text');
+        const backText = document.getElementById('back-text');
+        const counterElement = document.getElementById('counter');
+        const modeIndicator = document.getElementById('mode-indicator');
+        const stars = document.querySelectorAll('.star-indicator');
+
+        // Initialize
+        updateCard();
+
+        function changeChapter() {
+            const selection = document.getElementById('chapter-select').value;
+            switch(selection) {
+                case "1": baseList = [...chapter1]; break;
+                case "2": baseList = [...chapter2]; break;
+                case "3": baseList = [...chapter3]; break;
+                case "4": baseList = [...chapter4]; break;
+                case "5": baseList = [...chapter5]; break;
+                case "6": baseList = [...chapter6]; break;
+                case "7": baseList = [...chapter7]; break;
+                case "all": baseList = [...chapter1, ...chapter2, ...chapter3, ...chapter4, ...chapter5, ...chapter6, ...chapter7]; break;
+            }
+            
+            // Exit modes and reset
+            isReviewMode = false;
+            isDeckComplete = false;
+            document.getElementById('review-btn').innerText = "Review Marked Only";
+            modeIndicator.innerText = "";
+            
+            currentList = baseList;
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function flipCard() {
+            if (isDeckComplete) return; 
+            cardElement.classList.toggle('is-flipped');
+        }
+
+        function toggleMark(event) {
+            if (event) event.stopPropagation(); 
+            if (isDeckComplete) return;
+
+            const currentWord = currentList[currentIndex];
+            currentWord.marked = !currentWord.marked;
+            
+            if (isReviewMode && currentList.filter(w => w.marked).length === 0) {
+                alert("The list is empty. Returning to the full legion.");
+                toggleReviewMode();
+                return;
+            }
+            updateUI();
+        }
+
+        function toggleReviewMode() {
+            if (!isReviewMode) {
+                const markedItems = baseList.filter(word => word.marked);
+                if (markedItems.length === 0) {
+                    alert("No words marked for battle! Select the star (★) to mark words.");
+                    return;
+                }
+                currentList = markedItems;
+                isReviewMode = true;
+                isDeckComplete = false;
+                document.getElementById('review-btn').innerText = "Return to Full Legion";
+                modeIndicator.innerText = "⚔️ Selective Drill Active ⚔️";
+            } else {
+                currentList = baseList;
+                isReviewMode = false;
+                isDeckComplete = false;
+                document.getElementById('review-btn').innerText = "Review Marked Only";
+                modeIndicator.innerText = "";
+            }
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function startReviewFromCompletion(event) {
+            if (event) event.stopPropagation();
+            
+            const markedItems = baseList.filter(word => word.marked);
+            currentList = markedItems;
+            isReviewMode = true;
+            isDeckComplete = false;
+            
+            document.getElementById('review-btn').innerText = "Return to Full Legion";
+            modeIndicator.innerText = "⚔️ Selective Drill Active ⚔️";
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function restartDeck(event) {
+            if (event) event.stopPropagation();
+            isDeckComplete = false;
+            currentIndex = 0;
+            updateCard();
+        }
+
+        function showCompletionScreen() {
+            cardElement.classList.remove('is-flipped');
+            setTimeout(() => {
+                const markedCount = baseList.filter(w => w.marked).length;
+                
+                let reviewHtml = markedCount > 0 
+                    ? `<button onclick="startReviewFromCompletion(event)" style="margin-bottom: 15px; width: 80%; background-color: #4b0082; font-size: 14px;">Review ${markedCount} Marked Word(s)</button><br>` 
+                    : `<div class="notes" style="margin-bottom: 20px;">No words marked for review!</div>`;
+                
+                frontText.innerHTML = `
+                    <div style="font-size: 36px; color: #800000; margin-bottom: 10px;">FINIS!</div>
+                    <div style="font-size: 18px; color: #1a1a1a; margin-bottom: 25px;">You have inspected every word.</div>
+                    ${reviewHtml}
+                    <button onclick="restartDeck(event)" style="width: 80%; font-size: 14px;">Restart Deck</button>
+                `;
+                
+                stars.forEach(star => star.style.display = 'none');
+                counterElement.innerText = "Deck Complete";
+                document.getElementById('mark-btn').innerText = "Mark for Drill";
+            }, 150);
+        }
+
+        function updateCard() {
+            if (isDeckComplete) {
+                showCompletionScreen();
+                return;
+            }
+
+            cardElement.classList.remove('is-flipped');
+            setTimeout(() => {
+                stars.forEach(star => star.style.display = 'block'); 
+
+                const currentWord = currentList[currentIndex];
+                frontText.innerHTML = currentWord.front;
+                
+                let notesHtml = currentWord.notes ? `<div class="notes">${currentWord.notes}</div>` : '';
+                backText.innerHTML = `<div>${currentWord.back}</div>${notesHtml}`;
+                
+                counterElement.innerText = `${currentIndex + 1} / ${currentList.length}`;
+                updateUI();
+            }, 150);
+        }
+
+        function updateUI() {
+            if (isDeckComplete) return;
+
+            const currentWord = currentList[currentIndex];
+            stars.forEach(star => {
+                currentWord.marked ? star.classList.add('marked') : star.classList.remove('marked');
+            });
+            document.getElementById('mark-btn').innerText = currentWord.marked ? "Dismiss Mark" : "Mark for Drill";
+        }
+
+        function nextCard() {
+            if (isDeckComplete) return; 
+            
+            if (currentIndex < currentList.length - 1) {
+                currentIndex++;
+                updateCard();
+            } else {
+                isDeckComplete = true;
+                updateCard();
+            }
+        }
+
+        function prevCard() {
+            if (isDeckComplete) {
+                isDeckComplete = false;
+                currentIndex = currentList.length - 1; 
+                updateCard();
+                return;
+            }
+            
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        }
+
+        function shuffleCards() {
+            for (let i = currentList.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentList[i], currentList[j]] = [currentList[j], currentList[i]];
+            }
+            currentIndex = 0;
+            isDeckComplete = false; 
+            updateCard();
+        }
+
+        // --- Keyboard Shortcuts ---
+        document.addEventListener('keydown', function(event) {
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.tagName === 'SELECT') return;
+
+            if (event.code === 'Space') {
+                event.preventDefault(); 
+                flipCard();
+            } else if (event.code === 'ArrowRight') {
+                nextCard();
+            } else if (event.code === 'ArrowLeft') {
+                prevCard();
+            }
+        });
+    </script>
+</body>
+</html>
